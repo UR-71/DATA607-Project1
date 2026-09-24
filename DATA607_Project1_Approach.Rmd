@@ -1,0 +1,62 @@
+---
+title: "Project1 Approach: Chess Tournament Data"
+author: "Ummay Rukiya"
+date: "2026-09-22"
+output: html_document
+---
+
+## Overview
+
+For this project, I plan to clean and reorganize a text file containing the results of a chess tournament. The file includes information about 64 players, but the data is arranged across multiple lines and mixed with tournament results from seven rounds. My goal is to turn this information into a clean dataset that can be saved as a CSV file.
+
+The final dataset will contain each player’s name, state, total number of points, pre-tournament rating, and the average pre-tournament rating of the opponents that player faced.
+
+## Data Source
+
+I will use the `tournamentinfo.txt` file provided with the project instructions. I plan to include the original text file in my GitHub repository so that another person can run the R Markdown file without needing access to my computer or the course website.
+
+The file contains one section for each player. The first line of a player’s section includes the pair number, name, total points, and round results. The second line includes the player’s state, identification number, and pre- and post-tournament ratings.
+
+## Planned Approach
+
+First, I will load the text file into R using `readLines()` so that I can work with each line separately. I will remove the separator lines and identify the two lines that belong to each player.
+
+From the first line, I will extract the player’s pair number, name, total points, and the opponent numbers shown for each round. From the second line, I will extract the player’s state and pre-tournament rating. I will then combine the information from both lines into one row for each player.
+
+Some ratings contain additional characters, such as `P17` or `P6`. In those cases, I will keep the numerical rating that appears before those characters. I will also remove unnecessary spaces while keeping players’ complete names.
+
+Next, I will create a lookup table connecting each pair number with that player’s pre-tournament rating. The round information uses pair numbers to identify opponents, so this lookup table will allow me to find the rating of every opponent a player faced.
+
+For each player, I will collect the pre-tournament ratings of the opponents they actually played and calculate the average. I will round the result to the nearest whole number, as shown in the project example.
+
+## Handling Byes and Unplayed Rounds
+
+Some round entries contain letters such as `B`, `H`, `U`, or `X` without an opponent number. These entries may represent byes, half-point byes, unplayed rounds, or other tournament situations rather than games against another listed player.
+
+I will exclude these entries from the opponent-rating calculation because there is no opponent rating connected to them. The average will be calculated using only rounds containing a valid opponent pair number.
+
+## Validation Plan
+
+I will check that the completed dataset contains 64 rows, with one row for every player. I will also make sure the point totals and rating columns are numeric and that the pair numbers used to find opponents match valid players in the tournament.
+
+As a final check, I will reproduce the example provided for Gary Hua. His opponents’ pre-tournament ratings should produce an average of approximately 1605 after rounding. If my result matches that example, it will help confirm that the opponent numbers and ratings were connected correctly.
+
+## Expected Output
+
+The final CSV file will contain the following columns:
+
+* `player_name`
+* `state`
+* `total_points`
+* `pre_rating`
+* `average_opponent_pre_rating`
+
+I plan to name the output file `chess_tournament_players.csv`. The R Markdown file will show the process used to read, clean, validate, and export the data.
+
+## Anticipated Challenges
+
+The main challenge will be separating the useful information from the spacing, borders, and round-result symbols in the text file. Player names have different lengths, and some ratings include extra characters, so the extraction rules will need to handle those differences carefully.
+
+Another challenge will be distinguishing actual opponent numbers from rounds that contain only a bye or another non-game result. I will inspect the extracted results and compare several players with the original text before creating the final CSV file.
+
+
