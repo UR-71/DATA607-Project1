@@ -1,0 +1,212 @@
+---
+title: "Project1:Chess Tournament Data"
+author: "Ummay Rukiya"
+date: "2026-09-25"
+output: html_document
+---
+
+## Overview
+
+For this project, I will use R to extract player information from a text file containing chess tournament results. The final dataset will include each player’s name, state, total points, pre-tournament rating, and average pre-tournament rating of their opponents. I will then export the completed dataframe as a CSV file.
+
+## Loading the Tournament Data
+
+I loaded the original text file into R as separate lines. I will use the repeated structure of the file to identify the player records and extract the required information.
+
+```{r load-data}
+tournament_lines <- readLines(
+  "tournamentinfo.txt",
+  warn = FALSE
+)
+
+length(tournament_lines)
+head(tournament_lines, 10)
+```
+
+## Identifying Player Records
+
+Each player’s information appears across two lines. The first line contains the player’s number, name, points, and opponents. The second line contains the player’s state and pre-tournament rating. I identified these two types of lines using their repeated patterns.
+
+```{r identify-records}
+player_line_numbers <- grep(
+  "^\\s*[0-9]+\\s*\\|",
+  tournament_lines
+)
+
+rating_line_numbers <- grep(
+  "^\\s*[A-Z]{2}\\s*\\|",
+  tournament_lines
+)
+
+player_lines <- tournament_lines[player_line_numbers]
+rating_lines <- tournament_lines[rating_line_numbers]
+
+length(player_lines)
+length(rating_lines)
+```
+
+## Extracting Player Information
+
+I separated each record at the vertical bars in the text file. From these fields, I extracted each player’s tournament number, name, total points, state, and pre-tournament rating.
+
+```{r extract-player-information}
+split_record <- function(record) {
+  trimws(strsplit(record, "|", fixed = TRUE)[[1]])
+}
+
+player_fields <- lapply(player_lines, split_record)
+rating_fields <- lapply(rating_lines, split_record)
+
+pair_number <- as.integer(
+  sapply(player_fields, function(record) record[1])
+)
+
+player_name <- sapply(
+  player_fields,
+  function(record) record[2]
+)
+
+total_points <- as.numeric(
+  sapply(player_fields, function(record) record[3])
+)
+
+player_state <- sapply(
+  rating_fields,
+  function(record) record[1]
+)
+
+rating_text <- sapply(
+  rating_fields,
+  function(record) record[2]
+)
+
+pre_rating <- as.integer(
+  sub(".*R:\\s*([0-9]+).*", "\\1", rating_text)
+)
+
+player_information <- data.frame(
+  pair_number,
+  player_name,
+  player_state,
+  total_points,
+  pre_rating,
+  stringsAsFactors = FALSE
+)
+
+head(player_information)
+```
+
+## Extracting Opponent Numbers
+
+Each completed round contains a result—win, loss, or draw—followed by the opponent’s player number. Entries such as byes, half-point byes, and unplayed rounds do not identify an opponent, so I excluded them.
+
+```{r extract-opponents}
+round_results <- lapply(
+  player_fields,
+  function(record) record[4:10]
+)
+
+extract_opponents <- function(rounds) {
+  
+  completed_games <- grepl(
+    "^[WLD]\\s*[0-9]+",
+    rounds
+  )
+  
+  opponent_ids <- sub(
+    "^[WLD]\\s*([0-9]+).*$",
+    "\\1",
+    rounds[completed_games]
+  )
+  
+  as.integer(opponent_ids)
+}
+
+opponent_numbers <- lapply(
+  round_results,
+  extract_opponents
+)
+
+opponent_numbers[[1]]
+```
+
+## Calculating Average Opponent Ratings
+
+I matched each opponent number with that opponent’s pre-tournament rating. I then calculated the mean of those ratings for every player and rounded the result to the nearest whole number, following the assignment example.
+
+```{r calculate-opponent-averages}
+average_opponent_pre_rating <- sapply(
+  opponent_numbers,
+  function(opponent_ids) {
+    
+    opponent_ratings <- pre_rating[
+      match(opponent_ids, pair_number)
+    ]
+    
+    round(mean(opponent_ratings))
+  }
+)
+
+chess_results <- data.frame(
+  player_name,
+  player_state,
+  total_points,
+  pre_rating,
+  average_opponent_pre_rating,
+  stringsAsFactors = FALSE
+)
+
+head(chess_results)
+```
+
+## Final Tournament Results
+
+The final dataframe contains the five required fields for all 64 players. I checked the number of rows and searched for missing values before exporting the results.
+
+```{r validate-results}
+nrow(chess_results)
+colSums(is.na(chess_results))
+
+knitr::kable(
+  chess_results,
+  caption = "Chess Tournament Player Results"
+)
+```
+
+## Exporting the CSV File
+
+I exported the completed dataframe as a CSV file so it can be used in another program or imported into a database.
+
+```{r export-csv}
+write.csv(
+  chess_results,
+  "chess_tournament_results.csv",
+  row.names = FALSE
+)
+
+file.exists("chess_tournament_results.csv")
+```
+
+## Conclusion
+
+I successfully extracted the required information for all 64 chess players from the original tournament text file. I used each player’s round results to identify their opponents and matched those opponent numbers with their pre-tournament ratings. The final dataframe contains each player’s name, state, total points, pre-rating, and average opponent pre-rating. I also exported the completed results as a CSV file that can be imported into a database or used for further analysis.
+
+## Generative AI Use
+
+I used ChatGPT to help develop parts of the R code, understand how to extract information from the structured text file, and check the final calculations.
+
+OpenAI. (2026). *ChatGPT (GPT-5)* [Large language model]. https://chatgpt.com. Accessed September 26, 2026.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
